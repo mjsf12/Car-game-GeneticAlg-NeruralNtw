@@ -12,7 +12,7 @@ class Jogo():
         self.rua=[]
         self.player = []
         self.inimigo = []
-        self.individuos = 10
+        self.individuos = 200
         self.Qinimigos = 25
         self.Vinimigo = 8
         self.Vindivi = 6

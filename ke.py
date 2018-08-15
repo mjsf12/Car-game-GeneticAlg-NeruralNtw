@@ -21,8 +21,8 @@ class KerasGenetc():
             x.join()
             self.networks = self.networks +x.net
             #self.networks.append(self.create_neural())
-        for x in self.networks:
-           print (x)
+        print (len(self.networks))
+        exit()
     def create_neural(self,Peso=0):
         with graph.as_default():
             model = Sequential()
@@ -34,7 +34,8 @@ class KerasGenetc():
             else:
                 model.set_weights(Peso)
             gene = self.toGenes(Peso)
-            return ([0,model,gene])
+            model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        return ([0,model,gene])
     
     def toGenes(self,a):
         aux = []
@@ -105,7 +106,6 @@ class KerasGenetc():
         self.qual = n
 
     def rodar(self,array):
-        print(self.qual)
         return self.networks[self.qual][1].predict(np.array([array]))
     
     def classificar(self,score):
@@ -206,11 +206,12 @@ class Theads_Criar(threading.Thread):
         self.qtd = int(qtd)
         self.peso = peso
         self.net = []
+        #print(qtd)
 
     def run(self):
-        for _ in range(self.qtd):
+        for x in range(self.qtd):
+            print(self.name + " - fazendo rede:"+ str(x))
             self.net.append(KerasGenetc.create_neural(self,self.peso))
-
     def getpesos(self,model):
         return model.get_weights()    
 
