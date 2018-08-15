@@ -3,27 +3,38 @@ from keras.layers import Dense
 import numpy as np
 import bitarray
 import struct
+import threading
 from keras.models import model_from_yaml
-
+import tensorflow as tf
+graph = tf.get_default_graph()
 class KerasGenetc():
     def __init__(self,n):
         self.networks = []
         self.tam = n
-        self.qual = 0;
-        for _ in range(n):
-            self.networks.append(self.create_neural())
-            
+        self.qual = 0
+        theads = []
+        for x in range(8):
+            theads.append(Theads_Criar("thead - " + str(x),self.tam/8))
+        for x in theads:
+            x.start()
+        for x in theads:
+            x.join()
+            self.networks = self.networks +x.net
+            #self.networks.append(self.create_neural())
+        for x in self.networks:
+           print (x)
     def create_neural(self,Peso=0):
-        model = Sequential()
-        model.add(Dense(6,  input_dim=20 ,bias_initializer='random_uniform'))
-        model.add(Dense(12,bias_initializer='random_uniform'))
-        model.add(Dense(5, activation='softmax' ,bias_initializer='random_uniform'))
-        if Peso == 0:
-            Peso=self.getpesos(model)
-        else:
-            model.set_weights(Peso)
-        gene = self.toGenes(Peso)
-        return ([0,model,gene])
+        with graph.as_default():
+            model = Sequential()
+            model.add(Dense(6,  input_dim=20 ,bias_initializer='random_uniform'))
+            model.add(Dense(12,bias_initializer='random_uniform'))
+            model.add(Dense(5, activation='softmax' ,bias_initializer='random_uniform'))
+            if Peso == 0:
+                Peso=model.get_weights()
+            else:
+                model.set_weights(Peso)
+            gene = self.toGenes(Peso)
+            return ([0,model,gene])
     
     def toGenes(self,a):
         aux = []
@@ -94,6 +105,7 @@ class KerasGenetc():
         self.qual = n
 
     def rodar(self,array):
+        print(self.qual)
         return self.networks[self.qual][1].predict(np.array([array]))
     
     def classificar(self,score):
@@ -185,3 +197,31 @@ class KerasGenetc():
             yaml_file.write(model_yaml)
         # serialize weights to HDF5
         model.save_weights("Geracao "+str(x)+" Ganhador.h5")
+
+class Theads_Criar(threading.Thread):
+
+    def __init__(self,nome,qtd,peso=0):
+        threading.Thread.__init__(self)
+        self.name = nome
+        self.qtd = int(qtd)
+        self.peso = peso
+        self.net = []
+
+    def run(self):
+        for _ in range(self.qtd):
+            self.net.append(KerasGenetc.create_neural(self,self.peso))
+
+    def getpesos(self,model):
+        return model.get_weights()    
+
+    def toGenes(self,a):
+        aux = []
+        for x in range(6):
+            if(not x % 2 == 0):
+                for y in a[x]:
+                    aux.append(y)           
+            else:
+                for y in a[x]:
+                    for z in y:
+                        aux.append(z)
+        return aux
